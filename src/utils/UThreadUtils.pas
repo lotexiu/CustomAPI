@@ -21,6 +21,7 @@ type
     class procedure _onThread(AThreadData: TThreadData; AProc: TProc);
   public
     class procedure addThreadData(AThreadData: TThreadData); overload;
+    class function getThreadData(AKey: String): TThreadData;
 
     {Normal}
     class procedure onThread(AProc: TProc); overload;
@@ -55,6 +56,12 @@ class procedure TThreadUtils.addThreadData(AThreadData: TThreadData);
 begin
   FDictionary.add<TThreadData>(AThreadData.ThreadType, AThreadData);
 end;
+
+class function TThreadUtils.getThreadData(AKey: String): TThreadData;
+begin
+  Result := FDictionary.get<TThreadData>(AKey);
+end;
+
 
 class procedure TThreadUtils._onThread(AThreadData: TThreadData; AProc: TProc);
 begin

@@ -90,7 +90,7 @@ end;
 procedure TThreadData.addExecutionTime(ATime: Integer);
 begin
   Inc(FExecutionCount);
-  FAvarage := ((FAvarage * FExecutionCount-1) + ATime) / FExecutionCount;
+  FAvarage := ((FAvarage * (FExecutionCount-1)) + ATime) / FExecutionCount;
 end;
 
 procedure TThreadData.addThread;
@@ -100,7 +100,7 @@ end;
 
 function TThreadData.getAvarage: Extended;
 begin
-  Result := Math.RoundTo(FAvarage/1000, 2);
+  Result := Math.Max(Math.RoundTo(FAvarage/1000, -2),0);
 end;
 
 function TThreadData.getWait: Boolean;
