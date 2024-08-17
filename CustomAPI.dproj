@@ -150,6 +150,10 @@
         <DCCReference Include="src\utils\UJSONUtils.pas"/>
         <DCCReference Include="src\utils\models\UJSONException.pas"/>
         <DCCReference Include="src\utils\UStringUtils.pas"/>
+        <DCCReference Include="src\utils\UDebugUtils.pas"/>
+        <DCCReference Include="src\utils\models\UGenericDictionary.pas"/>
+        <DCCReference Include="src\utils\models\UThreadData.pas"/>
+        <DCCReference Include="src\utils\UNTDLL.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

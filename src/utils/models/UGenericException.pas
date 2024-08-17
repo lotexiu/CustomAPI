@@ -1,4 +1,4 @@
-﻿unit UGenericException;
+unit UGenericException;
 
 interface
 

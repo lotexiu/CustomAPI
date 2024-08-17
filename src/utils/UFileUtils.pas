@@ -17,8 +17,11 @@ type
   private
     class var critSectionLog: TCriticalSection;
   public
-    class procedure buildFile(APath, AFile: String);
+    class procedure buildFile(AFile: String); overload;
+    class procedure buildFile(APath, AFile: String); overload;
     class procedure buildPath(APath: String);
+    class procedure save(AText, AFile: String; AKeepPreviousData: Boolean); overload;
+    class procedure save(AText, AFile: String); overload;
     class function readParam<T>(ASection, AParam: String; ADefaultValue: T; AFile: String):T;
     class function writeParam<T>(ASection, AParam: String; ADefaultValue: T; AFile: String):T;
     class procedure writeLog(ALog, AFile: String; AKeepTrying: Boolean = False);
@@ -28,16 +31,22 @@ implementation
 
 { TFileUtils }
 
-class procedure TFileUtils.buildFile(APath, AFile: String);
+class procedure TFileUtils.buildFile(AFile: String);
 var
   FFile: TextFile;
 begin
-  if not FileExists(APath+AFile) then
+  buildPath(ExtractFilePath(AFile));
+  if not FileExists(AFile) then
   begin
-    AssignFile(FFile, APath+AFile);
+    AssignFile(FFile, AFile);
     Rewrite(FFile);
     CloseFile(FFile);
   end;
+end;
+
+class procedure TFileUtils.buildFile(APath, AFile: String);
+begin
+  buildFile(APath+AFile);
 end;
 
 class procedure TFileUtils.buildPath(APath: String);
@@ -46,8 +55,22 @@ begin
     ForceDirectories(APath);
 end;
 
-class function TFileUtils.readParam<T>(ASection, AParam: String;
-  ADefaultValue: T; AFile: String): T;
+class procedure TFileUtils.save(AText, AFile: String);
+begin
+  save(AText, AFile, False);
+end;
+
+class procedure TFileUtils.save(AText, AFile: String; AKeepPreviousData: Boolean);
+var
+  Writer: TStreamWriter;
+begin
+  Writer := TStreamWriter.Create(AFile, AKeepPreviousData, TEncoding.UTF8);
+  Writer.WriteLine(AText);
+  Writer.Flush;
+  Writer.Free;
+end;
+
+class function TFileUtils.readParam<T>(ASection, AParam: String; ADefaultValue: T; AFile: String): T;
 var
   FIni: TIniFile;
 begin
@@ -176,7 +199,7 @@ end;
 initialization
   TFileUtils.critSectionLog := TCriticalSection.Create;
 
-//finalization
-//  TGenericUtils.freeAndNil(TFileUtils.critSectionLog);
+finalization
+  TGenericUtils.freeAndNil(TFileUtils.critSectionLog);
 
 end.
