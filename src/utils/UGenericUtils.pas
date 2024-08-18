@@ -74,6 +74,7 @@ type
     class function tclassOf<T>: TClass; overload;
     class function tclassOf(AQualifiedName: String): TClass; overload;
     class function tclassOf<T:class>(AObject: T): TClass; overload;
+    class function tclassOf(APointer: Pointer): TClass; overload;
 
     class function typeName<T>: String; overload;
     class function typeName<T>(AValue: T): String; overload;
@@ -386,14 +387,8 @@ begin
 end;
 
 class function TGenericUtils.tclassOf<T>: TClass;
-var
-  FRContext: TRttiContext;
-  FRType: TRttiType;
 begin
-  FRContext := TRttiContext.Create;
-  FRType := FRContext.GetType(TypeInfo(T));
-  Result := FRType.AsInstance.MetaclassType;
-  FRContext.Free;
+  Result := tclassOf(TypeInfo(T));
 end;
 
 class function TGenericUtils.tclassOf(AQualifiedName: String): TClass;
@@ -405,6 +400,17 @@ begin
   FRType := FRContext.FindType(AQualifiedName);
   if FRType.IsInstance then  
     Result := FRType.AsInstance.MetaclassType;
+  FRContext.Free;
+end;
+
+class function TGenericUtils.tclassOf(APointer: Pointer): TClass;
+var
+  FRContext: TRttiContext;
+  FRType: TRttiType;
+begin
+  FRContext := TRttiContext.Create;
+  FRType := FRContext.GetType(APointer);
+  Result := FRType.AsInstance.MetaclassType;
   FRContext.Free;
 end;
 
