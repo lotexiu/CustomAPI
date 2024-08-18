@@ -26,7 +26,6 @@ uses
   UNTDLL in 'src\utils\UNTDLL.pas';
 
 begin
-
   TThreadUtils.onThread('ThreadTest', 2, 500,
   procedure
   var
@@ -34,8 +33,8 @@ begin
   begin
     TWindowsUtils.cleanScreen;
     FThreadData := TThreadUtils.getThreadData('ThreadTest');
-    Writeln(FThreadData.toString);
+    if FThreadData.ThreadRunningCount > 2 then
+      Writeln(FThreadData.toString);
   end);
-
   sleep(100000);
 end.

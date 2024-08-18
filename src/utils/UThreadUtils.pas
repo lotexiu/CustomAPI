@@ -7,6 +7,7 @@ uses
   Generics.Collections,
   Classes,
   SysUtils,
+  SyncObjs,
   UWindowsUtils,
   UGenericUtils,
   UGenericDictionary,
@@ -16,8 +17,10 @@ type
   TThreadUtils = class
   private
     class var FDictionary: TGenericDictionary;
-    class procedure Create;
-    class procedure Destroy;
+    class var FCritSectionThread: TCriticalSection;
+
+    class procedure _Create;
+    class procedure _Destroy;
     class procedure _onThread(AThreadData: TThreadData; AProc: TProc);
   public
     class procedure addThreadData(AThreadData: TThreadData); overload;
@@ -40,14 +43,16 @@ implementation
 
 { TThreadUtils }
 
-class procedure TThreadUtils.Create;
+class procedure TThreadUtils._Create;
 begin
+  FCritSectionThread := TCriticalSection.Create;
   if TGenericUtils.isEmptyOrNull(FDictionary) Then
     FDictionary := TGenericDictionary.Create;
 end;
 
-class procedure TThreadUtils.Destroy;
+class procedure TThreadUtils._Destroy;
 begin
+  TGenericUtils.freeAndNil(FCritSectionThread);
   FDictionary.FreeValuesOnDestroy := True;
   TGenericUtils.freeAndNil(FDictionary);
 end;
@@ -62,26 +67,26 @@ begin
   Result := FDictionary.get<TThreadData>(AKey);
 end;
 
-
 class procedure TThreadUtils._onThread(AThreadData: TThreadData; AProc: TProc);
 begin
+  FCritSectionThread.Enter;
   while AThreadData.WaitToOpen do
     sleep(250);
-    
+
   AThreadData.addThread; {Adding Thread}
   TThread.CreateAnonymousThread(
   procedure
   var
     FWatch: TStopwatch;
   begin
-    FWatch := TStopwatch.StartNew;{Watching}    
+    FWatch := TStopwatch.StartNew;{Watching}
     try
       AProc;
     except
       AThreadData.ExecutionFailCount := AThreadData.ExecutionFailCount + 1;
     end;    
-    FWatch.Stop; {Stop Watching}    
-    AThreadData.removeThread; {Removing Thread}        
+    FWatch.Stop; {Stop Watching}
+    AThreadData.removeThread; {Removing Thread}
     AThreadData.addExecutionTime(FWatch.ElapsedMilliseconds); {Add for Avarage}
     TWindowsUtils.cleanAppMemoryFromLeak; {CleanMemory}
     TThread.CurrentThread.Terminate; {Closing Thread}
@@ -91,6 +96,7 @@ begin
       _onThread(AThreadData, AProc); {Open new Thread}
     end;
   end).Start;
+  FCritSectionThread.Release;
 end;
 
 class procedure TThreadUtils.onThread(AProc: TProc);
@@ -165,9 +171,9 @@ begin
 end;
 
 initialization
-  TThreadUtils.Create;
+  TThreadUtils._Create;
 
 finalization
-  TThreadUtils.Destroy;
+  TThreadUtils._Destroy;
 
 end.
