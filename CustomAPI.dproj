@@ -154,6 +154,10 @@
         <DCCReference Include="src\utils\models\UGenericDictionary.pas"/>
         <DCCReference Include="src\utils\models\UThreadData.pas"/>
         <DCCReference Include="src\utils\UNTDLL.pas"/>
+        <DCCReference Include="src\utils\models\UEnum.pas"/>
+        <DCCReference Include="src\utils\UEnumUtils.pas"/>
+        <DCCReference Include="src\utils\models\UEnumException.pas"/>
+        <DCCReference Include="src\utils\UAttributesUtils.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

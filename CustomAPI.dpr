@@ -23,7 +23,11 @@ uses
   UDebugUtils in 'src\utils\UDebugUtils.pas',
   UGenericDictionary in 'src\utils\models\UGenericDictionary.pas',
   UThreadData in 'src\utils\models\UThreadData.pas',
-  UNTDLL in 'src\utils\UNTDLL.pas';
+  UNTDLL in 'src\utils\UNTDLL.pas',
+  UEnum in 'src\utils\models\UEnum.pas',
+  UEnumUtils in 'src\utils\UEnumUtils.pas',
+  UEnumException in 'src\utils\models\UEnumException.pas',
+  UAttributesUtils in 'src\utils\UAttributesUtils.pas';
 
 procedure onExit;
 begin
@@ -33,7 +37,6 @@ end;
 
 begin
   AddExitProc(@onExit);
-  TApp.Create;
 
   TThreadUtils.onThread('ThreadTest', 1, 500,
   procedure
@@ -44,5 +47,5 @@ begin
     FThreadData := TThreadUtils.getThreadData('ThreadTest');
     Writeln(FThreadData.toString);
   end);
-//  sleep(100000);
+  sleep(100000);
 end.

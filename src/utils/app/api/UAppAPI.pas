@@ -6,7 +6,8 @@ uses
   Generics.Collections,
   UAppAPIRequest,
   UGenericUtils,
-  UGenericDictionary;
+  UGenericDictionary,
+  UEnum;
 
 type
   TAppAPI = class
@@ -17,11 +18,11 @@ type
     FModel: Pointer;
     FRequestList: TGenericDictionary;
 
-    function REQUEST(AType: TRequestType; APath: String;
+    function REQUEST(AType: TEnum<TRequestType>; APath: String;
                     AFunction: TRequestFunction): TAppAPIRequest; overload;
-    function REQUEST<Return>(AType: TRequestType; APath: String;
+    function REQUEST<Return>(AType: TEnum<TRequestType>; APath: String;
                     AFunction: TRequestFunctionR<Return>): TAppAPIRequest; overload;
-    function REQUEST<Receive,Return>(AType: TRequestType; APath: String;
+    function REQUEST<Receive,Return>(AType: TEnum<TRequestType>; APath: String;
                     AFunction: TRequestFunctionRR<Receive,Return>): TAppAPIRequest; overload;
   public
     class var APIList: TList<TAppAPI>;
@@ -91,26 +92,26 @@ begin
   FModel := TypeInfo(T);
 end;
 
-function TAppAPI.REQUEST(AType: TRequestType; APath: String;
+function TAppAPI.REQUEST(AType: TEnum<TRequestType>; APath: String;
                         AFunction: TRequestFunction): TAppAPIRequest;
 begin
   Result := TAppAPIRequest.Create(AType, APath, AFunction);
   Result.HideOnSwagger := FDefaultHideRequestOnSwagger;
-  FRequestList.add(APath,Result);
+  FRequestList.add(AType.toString+APath,Result);
 end;
-function TAppAPI.REQUEST<Return>(AType: TRequestType; APath: String;
+function TAppAPI.REQUEST<Return>(AType: TEnum<TRequestType>; APath: String;
                         AFunction: TRequestFunctionR<Return>): TAppAPIRequest;
 begin
   Result := TAppAPIRequest.Create<Return>(AType, APath, AFunction);
   Result.HideOnSwagger := FDefaultHideRequestOnSwagger;
-  FRequestList.add(APath,Result);
+  FRequestList.add(AType.toString+APath,Result);
 end;
-function TAppAPI.REQUEST<Receive,Return>(AType: TRequestType; APath: String;
+function TAppAPI.REQUEST<Receive,Return>(AType: TEnum<TRequestType>; APath: String;
                         AFunction: TRequestFunctionRR<Receive,Return>): TAppAPIRequest;
 begin
   Result := TAppAPIRequest.Create<Receive,Return>(AType, APath, AFunction);
   Result.HideOnSwagger := FDefaultHideRequestOnSwagger;
-  FRequestList.add(APath,Result);
+  FRequestList.add(AType.toString+APath,Result);
 end;
 
 function TAppAPI.GET<Return>(APath: String; AFunction: TRequestFunctionR<Return>): TAppAPIRequest;

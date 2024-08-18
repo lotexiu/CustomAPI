@@ -55,14 +55,16 @@ var
   FList: TArray<TThreadData>;
 begin
   FList := TThreadUtils.FDictionary.Values<TThreadData>;
+  {Waiting for closing all threads}
   TGenericUtils.forEach<TThreadData>(FList,
   procedure(AValue: TThreadData; out ABreak: Boolean)
   begin
-    AValue.Loop := False;
-    AValue.MaxThreadsRunning := 0;
+    AValue.Loop := False; {Disable Loop}
+    AValue.MaxThreadsRunning := 0; {Max Threads to 0}
     while AValue.ThreadRunningCount > 0 do
       Sleep(50);
   end);
+  {Destroying}
   TGenericUtils.freeAndNil(FCritSectionThread);
   FDictionary.FreeValuesOnDestroy := True;
   TGenericUtils.freeAndNil(FDictionary);
@@ -80,6 +82,7 @@ end;
 
 class procedure TThreadUtils._onThread(AThreadData: TThreadData; AProc: TProc);
 begin
+  {Critical Section to prevent add/remove Threads problem}
   FCritSectionThread.Enter;
   while AThreadData.WaitToOpen do
     sleep(250);

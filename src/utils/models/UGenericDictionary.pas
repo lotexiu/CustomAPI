@@ -46,7 +46,7 @@ implementation
 
 procedure TGenericDictionary.add<T>(AKey: String; AValue: T);
 begin
-  FDictionary.Add(AKey, TValue.From<T>(AValue));
+  FDictionary.AddOrSetValue(AKey, TValue.From<T>(AValue));
 end;
 
 procedure TGenericDictionary.clear;
