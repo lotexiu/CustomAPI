@@ -13,24 +13,30 @@ type
     FFreeValues: Boolean;
     function getCount: Integer;
     function getItem(const AKey: String): TValue;
-    function getValues: TArray<TValue>;
     procedure setItem(const AKey: String; const AValue: TValue);
     function getKeys: TArray<String>;
   public
     constructor Create;
     destructor Destroy; override;
+
     property FreeValuesOnDestroy: Boolean read FFreeValues write FFreeValues;
     property Count: Integer read getCount;
     property Items[const Key: String]: TValue read getItem write setItem; default;
-    property Values: TArray<TValue> read getValues;
     property Keys: TArray<String> read getKeys;
+
+    function Values: TArray<TValue>; overload;
+    function Values<T>: TArray<T>; overload;
+
     function get<T>(AKey: String): T;
     function getPair(AKey: String): TPair<string, TValue>; overload;
     function getPair<T>(AKey: String): TPair<string, T>; overload;
+
     procedure add<T>(AKey: String; AValue:T);
     procedure remove<T>(AKey: String);
+
     function containsKey(AKey: String): Boolean;
     function containsValue<T>(AValue: T): Boolean;
+
     procedure trimExcess;
     procedure clear;
   end;
@@ -136,9 +142,18 @@ begin
   Result := TPair<string, T>.Create(AKey, get<T>(AKey))
 end;
 
-function TGenericDictionary.getValues: TArray<TValue>;
+function TGenericDictionary.Values: TArray<TValue>;
 begin
   Result := FDictionary.Values.ToArray;
+end;
+
+function TGenericDictionary.Values<T>: TArray<T>;
+begin
+  Result := TGenericUtils.map<TValue, T>(Values,
+  function(AValue: TValue): T
+  begin
+    Result := AValue.AsType<T>;
+  end);
 end;
 
 procedure TGenericDictionary.remove<T>(AKey: String);

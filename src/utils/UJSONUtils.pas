@@ -17,7 +17,8 @@ type
     class var MConverter: TJSONMarshal;
     class var MReverter: TJSONUnMarshal;
 
-    class procedure init;
+    class procedure _Create;
+    class procedure _Destroy;
 //  private function FindTypeInHierarchy(ATypeValidation: TFunc1P<TClass, Boolean>): TClass;
   public
     class function toString(AObject: TObject): String;
@@ -33,13 +34,16 @@ implementation
 
 { TJSONUtils }
 
-class procedure TJSONUtils.init;
+class procedure TJSONUtils._Create;
 begin
-  if TGenericUtils.isEmptyOrNull(MConverter) then
-  begin
-    MConverter := TJSONConverters.GetJSONMarshaler;
-    MReverter := TJSONConverters.GetJSONUnMarshaler;
-  end;
+  MConverter := TJSONConverters.GetJSONMarshaler;
+  MReverter := TJSONConverters.GetJSONUnMarshaler;
+end;
+
+class procedure TJSONUtils._Destroy;
+begin
+  TGenericUtils.freeAndNil(MConverter);
+  TGenericUtils.freeAndNil(MReverter);
 end;
 
 class function TJSONUtils.toString(AObject: TObject): String;
@@ -148,7 +152,10 @@ begin
 end;
 
 initialization
-  TJSONUtils.init;
+  TJSONUtils._Create;
+
+finalization
+  TJSONUtils._Destroy;
 
 end.
 

@@ -3,12 +3,10 @@
 interface
 
 uses
-  Horse,
-  Horse.Callback,
-  Horse.Core,
-  Horse.Core.Group.Contract,
-  Horse.GBSwagger,
-  UAppAPIRequest;
+  Generics.Collections,
+  UAppAPIRequest,
+  UGenericUtils,
+  UGenericDictionary;
 
 type
   TAppAPI = class
@@ -17,6 +15,7 @@ type
     FHideOnSwagger: Boolean;
     FDefaultHideRequestOnSwagger: Boolean;
     FModel: Pointer;
+    FRequestList: TGenericDictionary;
 
     function REQUEST(AType: TRequestType; APath: String;
                     AFunction: TRequestFunction): TAppAPIRequest; overload;
@@ -25,11 +24,15 @@ type
     function REQUEST<Receive,Return>(AType: TRequestType; APath: String;
                     AFunction: TRequestFunctionRR<Receive,Return>): TAppAPIRequest; overload;
   public
+    class var APIList: TList<TAppAPI>;
+
     constructor Create(AName: String);
+    destructor Destroy; override;
 
     property Name: String read FName write FName;
     property HideOnSwagger: Boolean read FHideOnSwagger write FHideOnSwagger;
     property DefaultHideRequestOnSwagger: Boolean read FDefaultHideRequestOnSwagger write FDefaultHideRequestOnSwagger;
+    property RequestList: TGenericDictionary read FRequestList;
 
     function ModelTypeInfo: Pointer;
     procedure Model<T>;
@@ -51,15 +54,31 @@ type
     function POST(APath: String; AFunction: TRequestFunction): TAppAPIRequest; overload;
     function PATCH(APath: String; AFunction: TRequestFunction): TAppAPIRequest; overload;
     function DELETE(APath: String; AFunction: TRequestFunction): TAppAPIRequest; overload;
+
+    procedure buildSwaggerData;
   end;
 
 implementation
 
 { TAppAPI }
 
+procedure TAppAPI.buildSwaggerData;
+begin
+
+end;
+
 constructor TAppAPI.Create(AName: String);
 begin
+  APIList.Add(Self);
   FName := AName;
+  FRequestList := TGenericDictionary.Create;
+  FRequestList.FreeValuesOnDestroy := True;
+end;
+
+destructor TAppAPI.Destroy;
+begin
+  TGenericUtils.freeAndNil(FRequestList);
+  inherited;
 end;
 
 function TAppAPI.ModelTypeInfo: Pointer;
@@ -77,18 +96,21 @@ function TAppAPI.REQUEST(AType: TRequestType; APath: String;
 begin
   Result := TAppAPIRequest.Create(AType, APath, AFunction);
   Result.HideOnSwagger := FDefaultHideRequestOnSwagger;
+  FRequestList.add(APath,Result);
 end;
 function TAppAPI.REQUEST<Return>(AType: TRequestType; APath: String;
                         AFunction: TRequestFunctionR<Return>): TAppAPIRequest;
 begin
   Result := TAppAPIRequest.Create<Return>(AType, APath, AFunction);
   Result.HideOnSwagger := FDefaultHideRequestOnSwagger;
+  FRequestList.add(APath,Result);
 end;
 function TAppAPI.REQUEST<Receive,Return>(AType: TRequestType; APath: String;
                         AFunction: TRequestFunctionRR<Receive,Return>): TAppAPIRequest;
 begin
   Result := TAppAPIRequest.Create<Receive,Return>(AType, APath, AFunction);
   Result.HideOnSwagger := FDefaultHideRequestOnSwagger;
+  FRequestList.add(APath,Result);
 end;
 
 function TAppAPI.GET<Return>(APath: String; AFunction: TRequestFunctionR<Return>): TAppAPIRequest;
@@ -154,5 +176,16 @@ begin
   Result := REQUEST(DELETE_, APath, AFunction);
 end;
 
+initialization
+  TAppAPI.APIList := TList<TAppAPI>.Create;
+
+finalization
+  TGenericUtils.forEach<TAppAPI>(TAppAPI.APIList,
+  procedure(API: TAppAPI; out ABreak: Boolean)
+  begin
+    if (not TGenericUtils.isEmptyOrNull(API)) then
+      TGenericUtils.freeAndNil(API);
+  end);
+  TGenericUtils.freeAndNil(TAppAPI.APIList);
 
 end.

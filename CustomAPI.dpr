@@ -25,7 +25,16 @@ uses
   UThreadData in 'src\utils\models\UThreadData.pas',
   UNTDLL in 'src\utils\UNTDLL.pas';
 
+procedure onExit;
 begin
+  ReportMemoryLeaksOnShutdown := True;
+  IsConsole := False;
+end;
+
+begin
+  AddExitProc(@onExit);
+  TApp.Create;
+
   TThreadUtils.onThread('ThreadTest', 1, 500,
   procedure
   var
@@ -35,5 +44,5 @@ begin
     FThreadData := TThreadUtils.getThreadData('ThreadTest');
     Writeln(FThreadData.toString);
   end);
-  sleep(100000);
+//  sleep(100000);
 end.

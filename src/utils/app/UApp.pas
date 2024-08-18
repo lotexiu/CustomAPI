@@ -3,7 +3,6 @@
 interface
 
 uses
-  Generics.Collections,
   Horse,
   Horse.Callback,
   Horse.Core,
@@ -11,15 +10,19 @@ uses
   Horse.CORS,
   Horse.Jhonson,
   Horse.GBSwagger,
+  Generics.Collections,
   UGenericUtils,
+  UGenericDictionary,
   UAppAPI;
 
 type
   TApp = class
   private
-    FAPIList: TList<TAppAPI>;
+    FAPIList: TGenericDictionary;
     FHorse: THorse;
 
+    class procedure _Create;
+    class procedure _Destroy;
     procedure initValues;
     function getHost: String;
     function getMaxConnections: Integer;
@@ -28,7 +31,10 @@ type
     procedure setMaxConnections(const Value: Integer);
     procedure setPort(const Value: Integer);
   public
+    class var APPList: TList<TApp>;
+
     constructor Create;
+    destructor Destroy; override;
 
     property Host: String read getHost write setHost;
     property Port: Integer read getPort write setPort;
@@ -47,12 +53,24 @@ implementation
 
 function TApp.API(AName: String): TAppAPI;
 begin
-  Result := TAppAPI.Create(AName);
+  if FAPIList.containsKey(AName) then
+    Result := FAPIList.get<TAppAPI>(AName)
+  else
+  begin
+    Result := TAppAPI.Create(AName);
+    FAPIList.Add(AName,Result);
+  end;
 end;
 
 constructor TApp.Create;
 begin
   initValues;
+end;
+
+destructor TApp.Destroy;
+begin
+  TGenericUtils.freeAndNil(FAPIList);
+  inherited;
 end;
 
 function TApp.getHost: String;
@@ -72,7 +90,10 @@ end;
 
 procedure TApp.initValues;
 begin
-  FAPIList := TList<TAppAPI>.Create;
+  FAPIList := TGenericDictionary.Create;
+  FAPIList.FreeValuesOnDestroy := True;
+  APPList.Add(Self);
+
   FHorse := THorse.Create;
   FHorse.Use(CORS);
   FHorse.Use(Jhonson);
@@ -85,6 +106,11 @@ end;
 procedure TApp.Listen;
 begin
   FHorse.Listen;
+  TGenericUtils.forEach<TAppAPI>(FAPIList.Values<TAppAPI>,
+  procedure(API: TAppAPI; out ABreak: Boolean)
+  begin
+    API.buildSwaggerData;
+  end);
 end;
 
 procedure TApp.setHost(const Value: String);
@@ -107,6 +133,26 @@ begin
   FHorse.StopListen;
 end;
 
+class procedure TApp._Create;
+begin
+  APPList := TList<TApp>.Create;
+end;
+
+class procedure TApp._Destroy;
+begin
+  TGenericUtils.forEach<TApp>(APPList,
+  procedure(APP: TApp; out ABreak: Boolean)
+  begin
+    if (not TGenericUtils.isEmptyOrNull(APP)) then
+      TGenericUtils.freeAndNil(APP);
+  end);
+  TGenericUTils.freeAndNil(APPList);
+end;
+
 initialization
+  TApp._Create;
+
+finalization
+  TApp._Destroy;
 
 end.

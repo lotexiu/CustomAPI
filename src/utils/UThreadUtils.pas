@@ -51,7 +51,18 @@ begin
 end;
 
 class procedure TThreadUtils._Destroy;
+var
+  FList: TArray<TThreadData>;
 begin
+  FList := TThreadUtils.FDictionary.Values<TThreadData>;
+  TGenericUtils.forEach<TThreadData>(FList,
+  procedure(AValue: TThreadData; out ABreak: Boolean)
+  begin
+    AValue.Loop := False;
+    AValue.MaxThreadsRunning := 0;
+    while AValue.ThreadRunningCount > 0 do
+      Sleep(50);
+  end);
   TGenericUtils.freeAndNil(FCritSectionThread);
   FDictionary.FreeValuesOnDestroy := True;
   TGenericUtils.freeAndNil(FDictionary);

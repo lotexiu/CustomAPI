@@ -263,7 +263,7 @@ end;
 
 class function TGenericUtils.isObject<T>: Boolean;
 begin
-  isObject(TValue.From<T>(Default(T)));
+  Result := isObject(TValue.From<T>(Default(T)));
 end;
 
 class function TGenericUtils.isObject<T>(AValue: T): Boolean;
