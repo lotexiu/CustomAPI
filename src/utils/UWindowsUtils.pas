@@ -82,7 +82,7 @@ end;
 
 class procedure TWindowsUtils.cleanScreen;
 const
-  FMaxBlankLines = 2;  { Maximum number of blank lines to consider for cleanup }
+  FMaxBlankLines = 10;  { Maximum number of blank lines to consider for cleanup }
   FMaxLines = 10;      { Maximum number of lines to process in a block }
 var
   FHConsole: THandle;
@@ -130,10 +130,10 @@ begin
   end;
   { Set the origin position for cleanup }
   FOrigin.Y := 0;
-  FSize := FScreenBuffer.dwSize.X * (FParts * FMaxLines);
+  FSize := FScreenBuffer.dwSize.X * ((FPart+1) * FMaxLines);
   { Adjust size if no non-blank characters were found }
   if FLastChar = 0 then
-    FSize := FScreenBuffer.dwSize.X * ((FParts - 1) * FMaxLines);
+    FSize := FScreenBuffer.dwSize.X * (FPart * FMaxLines);
   { Fill the console with spaces }
   Win32Check(FillConsoleOutputCharacter(
     FHConsole,
