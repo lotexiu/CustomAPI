@@ -47,6 +47,8 @@ type
     procedure addExecutionTime(ATime: Integer);
     procedure addThread;
     procedure removeThread;
+
+    function toString: String;
   end;
 
 implementation
@@ -118,6 +120,18 @@ end;
 procedure TThreadData.setThreadMax(const Value: Integer);
 begin
   FMaxThreadsRunning := Value;
+end;
+
+function TThreadData.toString: String;
+begin
+  Result :=
+    'Name       '+ThreadType+sLineBreak+
+    'Running    '+ThreadRunningCount.ToString+sLineBreak+
+    'Avarage    '+Avarage.ToString+sLineBreak+
+    'Executions '+ExecutionCount.ToString+sLineBreak+
+    'Fails      '+ExecutionFailCount.ToString+sLineBreak+
+    'Max        '+MaxThreadsRunning.ToString+sLineBreak+
+    'Interval   '+Interval.ToString;
 end;
 
 procedure TThreadData.initValues;

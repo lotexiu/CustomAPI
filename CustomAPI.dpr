@@ -5,16 +5,8 @@
 {$R *.res}
 
 uses
-  System.SysUtils,
-  TypInfo,
+  SysUtils,
   Classes,
-  Generics.Collections,
-  NetEncoding,
-  Rtti,
-  Rest.Json,
-  JSON,
-  DBXJSON,
-  DBXJSONReflect,
   UGenericUtils in 'src\utils\UGenericUtils.pas',
   UWindowsUtils in 'src\utils\UWindowsUtils.pas',
   UApp in 'src\utils\app\UApp.pas',
@@ -34,5 +26,16 @@ uses
   UNTDLL in 'src\utils\UNTDLL.pas';
 
 begin
+
+  TThreadUtils.onThread('ThreadTest', 2, 500,
+  procedure
+  var
+    FThreadData: TThreadData;
+  begin
+    TWindowsUtils.cleanScreen;
+    FThreadData := TThreadUtils.getThreadData('ThreadTest');
+    Writeln(FThreadData.toString);
+  end);
+
   sleep(100000);
 end.
