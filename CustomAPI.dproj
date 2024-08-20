@@ -158,6 +158,7 @@
         <DCCReference Include="src\utils\UEnumUtils.pas"/>
         <DCCReference Include="src\utils\models\UEnumException.pas"/>
         <DCCReference Include="src\utils\UAttributesUtils.pas"/>
+        <DCCReference Include="src\utils\models\UEnd.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

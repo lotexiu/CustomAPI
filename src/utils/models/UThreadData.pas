@@ -27,6 +27,7 @@ type
 
     procedure initValues;
     function getWait: Boolean;
+    function getHasThreadRunning: Boolean;
   public
     constructor Create; overload;
     constructor Create(AThreadType: String); overload;
@@ -43,6 +44,7 @@ type
     property MaxThreadsRunning: Integer read FMaxThreadsRunning write setThreadMax;
     property ThreadRunningCount: Integer read FThreadRunningCount write setThreadCount;
     property WaitToOpen: Boolean read getWait;
+    property hasThreadRunning: Boolean read getHasThreadRunning;
 
     procedure addExecutionTime(ATime: Integer);
     procedure addThread;
@@ -103,6 +105,11 @@ end;
 function TThreadData.getAvarage: Extended;
 begin
   Result := Math.Max(Math.RoundTo(FAvarage/1000, -2),0);
+end;
+
+function TThreadData.getHasThreadRunning: Boolean;
+begin
+  Result := ThreadRunningCount > 0
 end;
 
 function TThreadData.getWait: Boolean;

@@ -31,7 +31,7 @@ type
 
   TGenericUtils = class
   private
-//    class procedure getAllObjectTypesInTheTypeRecursive(AClass: TClass; out AList:TList<TClass>);
+    class procedure getAllObjectTypesInTheTypeRecursive(AClass: TClass; out AList:TList<TClass>);
   public
     class function castTo<R,T>(AValue: T): R; overload;
     class function castTo<R>(Avalue: Pointer): R; overload;
@@ -91,14 +91,10 @@ type
     class function map<T,R>(AList: TArray<T>; AFunc: TFunc1P<T, R>): TArray<R>; overload;
     class function map<T>(AList: TList<T>; AFunc: TFunc1P<T, T>; ADestroyOldList: Boolean = True): TList<T>; overload;
     class function map<T,R>(AList: TList<T>; AFunc: TFunc1P<T, R>; ADestroyOldList: Boolean = True): TList<R>; overload;
-//    class function getAttributes(ARType: TRttiType; AAttributeType: TClass = nil; AFrom: TClass = nil;
-//      AName: String = ''; AParamsTypeList: TArray<String> = []): TArray<TCustomAttribute>; overload;
-//    class function getAttributes<R: class; T>(ARType: TRttiType = nil): TArray<R>; overload;
-//    class function getAttributesFromAMethod(ARType: TRttiType; AFrom: TClass; AName: String = '';
-//      AType: String = ''): TArray<TCustomAttribute>;
-//    class function getAllObjectTypesInTheType(AClass: TClass):TList<TClass>;
-//    class function getGenericTypes(AQualifiedName: String):TList<TClass>;
-//    class function copyParentDataToChildren<T,R:class>(AParent:T; AChildren:R):R;
+
+    class function getAllObjectTypesInTheType(AClass: TClass):TList<TClass>;
+    class function getGenericTypes(AQualifiedName: String):TList<TClass>;
+    class function copyParentDataToChildren<T,R:class>(AParent:T; AChildren:R):R;
   end;
 implementation
 
@@ -217,16 +213,18 @@ var
 begin
   Result := False;
   try
-    FValue := TValue.From<T>(AValue);
+    FValue := TValue.From(AValue);
     {Empty}
     if (not Result) then
       Result := FValue.IsEmpty;
     {Null Type}
     if (not Result) then
       Result := FValue.TypeInfo = nil;
-    {T, Value is both Object or not}
-    if (not Result) and (FValue.Kind <> tkInterface) then
-      Result := not (isObject<T> = FValue.IsObject);
+
+    {T, Value isn't both same thing}
+    if (not Result) then
+      Result := not (isObject<T> = isObject(FValue));
+
     {not Valid Class}
     if (not Result) then
     begin
@@ -241,7 +239,10 @@ begin
     if (not Result) and (not sameType<T, Boolean>) then
       Result := equals<T>(AValue);
     {Try it to use}
-    if (not Result) then
+    if FValue.Kind = tkClassRef then
+      FValue.Kind;
+
+    if (not Result)  then
       FValue.ToString;
   except
     setNil(AValue);
@@ -255,13 +256,12 @@ var
   FTypeData: PTypeData;
 begin
   FType := AValue.TypeInfo;
-  {Not Array}
-  Result := not ((FType.Kind = tkDynArray) or (FType.Kind = tkArray));
-  if Result then
-    Result := AValue.IsObject;
+  Result := (FType.Kind in [tkClass, tkInterface, tkVariant]);
 end;
 
 class function TGenericUtils.isObject<T>: Boolean;
+var
+  FValue: TValue;
 begin
   Result := isObject(TValue.From<T>(Default(T)));
 end;
@@ -326,7 +326,7 @@ begin
   if (Length(FRConstructorMethod.GetParameters) > 0) then
     FArray := [nil];
   try
-    Result := FRConstructorMethod.Invoke(FRTypeInfo.AsInstance.MetaclassType, []).AsObject;
+    Result := FRConstructorMethod.Invoke(FRTypeInfo.AsInstance.MetaclassType, FArray).AsObject;
   except
     raise TGenericException.Create('Fail to make a new instance of '+AClass.ClassName);
   end;
@@ -396,6 +396,7 @@ var
   FRContext: TRttiContext;
   FRType: TRttiType;
 begin
+  Result := nil;
   FRContext := TRttiContext.Create;
   FRType := FRContext.FindType(AQualifiedName);
   if FRType.IsInstance then  
@@ -531,193 +532,95 @@ begin
   freeAndNil(FResultList)
 end;
 
-//class function TGenericUtils.copyParentDataToChildren<T, R>(AParent:T; AChildren:R): R;
-//var
-//  FParentType, FChildrenType: TRttiType;
-//  FChildrenProp: TRttiProperty;
-//  FChildrenField: TRttiField;
-//begin
-//  FParentType := rttiType<T>;
-//  FChildrenType := rttiType<R>;
-//  TGenericUtils.forEach<TRttiProperty>(FParentType.GetProperties,
-//  procedure(AParentProperty: TRttiProperty; out ABreak: Boolean)
-//  begin
-//    FChildrenProp := FChildrenType.GetProperty(AParentProperty.Name);
-//    if (FChildrenProp <> nil) and (FChildrenProp.IsWritable) then
-//      FChildrenProp.SetValue(Pointer(AChildren), AParentProperty.GetValue(@AParent));
-//  end);
-//  TGenericUtils.forEach<TRttiField>(FParentType.GetFields,
-//  procedure(AParentField: TRttiField; out ABreak: Boolean)
-//  begin
-//    FChildrenField := FChildrenType.GetField(AParentField.Name);
-//    if (FChildrenField <> nil) and (FChildrenField.Visibility in [mvPublic, mvPublished, mvProtected]) then
-//      FChildrenProp.SetValue(Pointer(AChildren),AParentField.GetValue(@AParent));
-//  end);
-//  Result := AChildren;
-//end;
-//class function TGenericUtils.getAllObjectTypesInTheType(AClass: TClass): TList<TClass>;
-//begin
-//  Result := TList<TClass>.Create;
-//  getAllObjectTypesInTheTypeRecursive(AClass, Result);
-//end;
-//class procedure TGenericUtils.getAllObjectTypesInTheTypeRecursive(AClass: TClass; out AList:TList<TClass>);
-//var
-//  FRttiType: TRttiType;
-//  FList: TList<TClass>;
-//  FListFromQualifiedName: TList<TClass>;
-//begin
-//  FList := AList;
-//  FRttiType := rttiType(AClass);
-//  if (not isEmptyOrNull(FRttiType)) then
-//  begin
-//    forEach<TRttiProperty>(FRttiType.GetProperties,
-//    procedure(AValue: TRttiProperty; out ABreak: Boolean)
-//    var
-//      FProp: TRttiType;
-//    begin
-//      FProp := AValue.PropertyType;
-//      FListFromQualifiedName := getGenericTypes(FProp.QualifiedName);
-//      forEach<TClass>(FListFromQualifiedName,
-//      procedure(AClass: TClass; out ABreak2: Boolean)
-//      begin
-//        if FList.IndexOf(AClass) = -1 then
-//          FList.Add(AClass);
-//      end);
-//      freeAndNil(FListFromQualifiedName);
-//      if FProp.IsInstance then
-//      begin
-//        if FList.IndexOf(FProp.AsInstance.MetaclassType) = -1 then
-//        begin
-//          FList.Add(FProp.AsInstance.MetaclassType);
-//          getAllObjectTypesInTheTypeRecursive(FProp.AsInstance.MetaclassType, FList);
-//        end;
-//      end;
-//    end);
-//  end;
-//end;
-//class function TGenericUtils.getGenericTypes(AQualifiedName: String):TList<TClass>;
-//var
-//  FRegex: TRegEx;
-//  FMatch: TMatch;
-//  FResult: String;
-//  FList: TList<TClass>;
-//begin
-//  FList := TList<TClass>.Create;
-//  FRegex := TRegEx.Create('<([^<>]+)>');
-//  FMatch := FRegex.Match(AQualifiedName);
-//  if (FMatch.Length > 0) then
-//  begin
-//    FResult := StringReplace(StringReplace(FMatch.Value,'<','',[]),'>','',[]);
-//    forEach<String>(SplitString(FResult,','),
-//    procedure(AValue: String; out ABreak: Boolean)
-//    begin
-//      if not isEmptyOrNull(tclassOf(AValue)) then
-//        FList.Add(tclassOf(AValue));
-//    end);
-//  end;
-//  freeAndNil(FMatch);
-//  freeAndNil(FRegex);
-//  Result := FList;
-//end;
-//class function TGenericUtils.getAttributes(ARType: TRttiType; AAttributeType: TClass = nil; AFrom: TClass = nil;
-//  AName: String = ''; AParamsTypeList: TArray<String> = []): TArray<TCustomAttribute>;
-//var
-//  FRMethod: TRttiMethod;
-//  FRParameter: TRttiParameter;
-//  FStringList: TArray<String>;
-//  FResultList: TArray<TCustomAttribute>;
-//begin
-//  if (not Assigned(AFrom)) then
-//    FResultList := ARType.getAttributes
-//  else if AFrom = TRttiMethod then
-//  begin
-//    if (Length(ARType.GetMethods(AName)) > 1) then
-//      for FRMethod in ARType.GetMethods(AName) do
-//      begin
-//        if Length(FRMethod.GetParameters) = Length(AParamsTypeList) then
-//        begin
-//          FStringList := map<TRttiParameter, String>(FRMethod.GetParameters,
-//            function(AValue: TRttiParameter): String
-//            begin
-//              Result := AValue.ParamType.Name;
-//            end);
-//          if String.Join(',', FStringList) = String.Join(',', AParamsTypeList)
-//          then
-//          begin
-//            FResultList := FRMethod.getAttributes;
-//            Break;
-//          end;
-//        end;
-//      end
-//    else
-//      FResultList := ARType.GetMethod(AName).getAttributes;
-//  end
-//  else if AFrom = TRttiField then
-//    FResultList := ARType.GetField(AName).getAttributes
-//  else if AFrom = TRttiProperty then
-//    FResultList := ARType.GetProperty(AName).getAttributes
-//  else if AFrom = TRttiIndexedProperty then
-//    FResultList := ARType.GetIndexedProperty(AName).getAttributes
-//  else if AFrom = TRttiParameter then
-//    raise TGenericException.Create
-//      ('Utilze getAttributesFromAMethod para obter os atributos de um parâmetro.')
-//  else
-//    raise TGenericException.Create(AFrom.ClassName + ' não suportado.');
-//
-//  if Assigned(AAttributeType) then
-//  begin
-//    Result := map<TCustomAttribute>(FResultList,
-//      function(AValue: TCustomAttribute): TCustomAttribute
-//      begin
-//        if AValue is AAttributeType then
-//          Result := AValue
-//        else
-//          Result := nil;
-//      end);
-//  end
-//  else
-//    Result := FResultList;
-//end;
-//class function TGenericUtils.getAttributes<R,T>(ARType: TRttiType = nil): TArray<R>;
-//var
-//  FRContext: TRttiContext;
-//  FRType: TRttiType;
-//begin
-//  if Assigned(ARType) then
-//    Result := TArrayUtils.TArrayCast<TCustomAttribute, R>
-//      (getAttributes(ARType, R))
-//  else
-//  begin
-//    FRContext := TRttiContext.Create;
-//    FRType := FRContext.GetType(TypeInfo(T));
-//    Result := TArrayUtils.TArrayCast<TCustomAttribute, R>
-//      (getAttributes(FRType, R))
-//  end;
-//  FRContext.Free;
-//end;
-//class function TGenericUtils.getAttributesFromAMethod(ARType: TRttiType; AFrom: TClass; AName: String = '';
-//  AType: String = ''): TArray<TCustomAttribute>;
-//var
-//  FRMethod: TRttiMethod;
-//  FRParameter: TRttiParameter;
-//begin
-//  for FRMethod in ARType.GetMethods(AName) do
-//  begin
-//    if AFrom = TRttiMethod then
-//      Result := FRMethod.getAttributes
-//    else if AFrom = TRttiParameter then
-//    begin
-//      if (AName = '') or (AType = '') then
-//        raise TGenericException.Create
-//          ('Campo AName e AType é necessário para buscar attributos de parâmetro.')
-//      else
-//        for FRParameter in FRMethod.GetParameters do
-//        begin
-//          if (FRParameter.Name = AName) and (FRParameter.ParamType.Name = AType)
-//          then
-//            Result := FRParameter.getAttributes;
-//        end;
-//    end;
-//  end;
-//end;
+class function TGenericUtils.copyParentDataToChildren<T, R>(AParent:T; AChildren:R): R;
+var
+  FParentType, FChildrenType: TRttiType;
+  FChildrenProp: TRttiProperty;
+  FChildrenField: TRttiField;
+begin
+  FParentType := rttiType<T>;
+  FChildrenType := rttiType<R>;
+  TGenericUtils.forEach<TRttiProperty>(FParentType.GetProperties,
+  procedure(AParentProperty: TRttiProperty; out ABreak: Boolean)
+  begin
+    FChildrenProp := FChildrenType.GetProperty(AParentProperty.Name);
+    if (FChildrenProp <> nil) and (FChildrenProp.IsWritable) then
+      FChildrenProp.SetValue(Pointer(AChildren), AParentProperty.GetValue(@AParent));
+  end);
+  TGenericUtils.forEach<TRttiField>(FParentType.GetFields,
+  procedure(AParentField: TRttiField; out ABreak: Boolean)
+  begin
+    FChildrenField := FChildrenType.GetField(AParentField.Name);
+    if (FChildrenField <> nil) and (FChildrenField.Visibility in [mvPublic, mvPublished, mvProtected]) then
+      FChildrenProp.SetValue(Pointer(AChildren),AParentField.GetValue(@AParent));
+  end);
+  Result := AChildren;
+end;
+class function TGenericUtils.getAllObjectTypesInTheType(AClass: TClass): TList<TClass>;
+begin
+  Result := TList<TClass>.Create;
+  getAllObjectTypesInTheTypeRecursive(AClass, Result);
+end;
+
+class procedure TGenericUtils.getAllObjectTypesInTheTypeRecursive(AClass: TClass; out AList:TList<TClass>);
+var
+  FRttiType: TRttiType;
+  FList: TList<TClass>;
+  FListFromQualifiedName: TList<TClass>;
+begin
+  FList := AList;
+  FRttiType := rttiType(AClass);
+  if (not isEmptyOrNull(FRttiType)) then
+  begin
+    forEach<TRttiProperty>(FRttiType.GetProperties,
+    procedure(AValue: TRttiProperty; out ABreak: Boolean)
+    var
+      FProp: TRttiType;
+    begin
+      FProp := AValue.PropertyType;
+      FListFromQualifiedName := getGenericTypes(FProp.QualifiedName);
+      forEach<TClass>(FListFromQualifiedName,
+      procedure(AClass: TClass; out ABreak2: Boolean)
+      begin
+        if FList.IndexOf(AClass) = -1 then
+          FList.Add(AClass);
+      end);
+      freeAndNil(FListFromQualifiedName);
+      if FProp.IsInstance then
+      begin
+        if FList.IndexOf(FProp.AsInstance.MetaclassType) = -1 then
+        begin
+          FList.Add(FProp.AsInstance.MetaclassType);
+          getAllObjectTypesInTheTypeRecursive(FProp.AsInstance.MetaclassType, FList);
+        end;
+      end;
+    end);
+  end;
+end;
+
+class function TGenericUtils.getGenericTypes(AQualifiedName: String):TList<TClass>;
+var
+  FRegex: TRegEx;
+  FMatch: TMatch;
+  FResult: String;
+  FList: TList<TClass>;
+begin
+  FList := TList<TClass>.Create;
+  FRegex := TRegEx.Create('<([^<>]+)>');
+  FMatch := FRegex.Match(AQualifiedName);
+  if (FMatch.Length > 0) then
+  begin
+    FResult := StringReplace(StringReplace(FMatch.Value,'<','',[]),'>','',[]);
+    forEach<String>(SplitString(FResult,','),
+    procedure(AValue: String; out ABreak: Boolean)
+    begin
+      if not isEmptyOrNull(tclassOf(AValue)) then
+        FList.Add(tclassOf(AValue));
+    end);
+  end;
+  freeAndNil(FMatch);
+  freeAndNil(FRegex);
+  Result := FList;
+end;
+
 end.

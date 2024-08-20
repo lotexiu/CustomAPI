@@ -27,7 +27,8 @@ uses
   UEnum in 'src\utils\models\UEnum.pas',
   UEnumUtils in 'src\utils\UEnumUtils.pas',
   UEnumException in 'src\utils\models\UEnumException.pas',
-  UAttributesUtils in 'src\utils\UAttributesUtils.pas';
+  UAttributesUtils in 'src\utils\UAttributesUtils.pas',
+  UEnd in 'src\utils\models\UEnd.pas';
 
 procedure onExit;
 begin
@@ -35,17 +36,28 @@ begin
   IsConsole := False;
 end;
 
+var
+  FApp: TApp;
+
 begin
   AddExitProc(@onExit);
 
-  TThreadUtils.onThread('ThreadTest', 1, 500,
-  procedure
-  var
-    FThreadData: TThreadData;
-  begin
-    TWindowsUtils.cleanScreen;
-    FThreadData := TThreadUtils.getThreadData('ThreadTest');
-    Writeln(FThreadData.toString);
-  end);
-  sleep(100000);
+//  TThreadUtils.onThread('ThreadTest', 250, 0,
+//  procedure
+//  var
+//    FThreadData: TThreadData;
+//  begin
+//    TWindowsUtils.cleanScreen;
+//    FThreadData := TThreadUtils.getThreadData('ThreadTest');
+//    Writeln(FThreadData.toString);
+//  end);
+
+  FApp := TApp.Create;
+  FApp.API('test').&End.API('');
+//    .GET<String>('path-1',
+//    function(AReq: THorseRequest; ARes: THorseResponse): String
+//    begin
+//    end);
+
+  sleep(120*1000);
 end.

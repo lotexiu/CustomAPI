@@ -108,7 +108,10 @@ begin
     begin
       sleep(AThreadData.Interval); {Interval}
       _onThread(AThreadData, AProc); {Open new Thread}
-    end;
+    end
+    else if AThreadData.ThreadType = 'global' then
+      TGenericUtils.freeAndNil(AThreadData);
+
   end).Start;
   FCritSectionThread.Release;
 end;
@@ -119,7 +122,6 @@ var
 begin
   FThread := TThreadData.Create;
   _onThread(FThread, AProc);
-  TGenericUtils.freeAndNil(FThread);
 end;
 
 class procedure TThreadUtils.onThread(AInterval: Integer; AProc: TProc);
@@ -128,7 +130,6 @@ var
 begin
   FThread := TThreadData.Create(AInterval);
   _onThread(FThread, AProc);
-  TGenericUtils.freeAndNil(FThread);  
 end;
 
 class procedure TThreadUtils.onThread(AThreadType: String; AProc: TProc);
